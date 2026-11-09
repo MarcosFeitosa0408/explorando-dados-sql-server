@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Apresentação dos códigos SQL Server do projeto Explorando Dados. Veja a consulta em T-SQL por etapas e baixe o script para SSMS.">
+<title>Explorando Dados | Códigos SQL Server</title>
+<link rel="stylesheet" href="style.css">
+<script src="sql.js" defer></script>
+</head>
+<body>
+<header class="top"><div class="wrap nav">
+<a class="brand" href="index.html"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span> Explorando<span>Dados</span></a>
+<nav aria-label="Navegação"><a href="index.html#painel">Dashboard</a><a href="sql.html" aria-current="page">Códigos SQL</a></nav>
+</div></header>
+<main class="wrap sql-main">
+<section class="hero sql-hero" aria-labelledby="titulo">
+<p class="eyebrow">PROJETO DE PORTFÓLIO / SQL SERVER</p>
+<h1 id="titulo">EXPLORANDO<br><strong>DADOS<span>.</span></strong></h1>
+<h2>Do histórico de pagamentos aos indicadores em T-SQL</h2>
+<p class="hero-copy">Veja como uma análise de aprovações e estornos é construída em cinco etapas, da criação da base fictícia ao resultado por canal.</p>
+<div class="sql-actions"><a class="primary-action" href="#etapa-1">Ver os códigos ↓</a><a class="download" href="explorando-dados.sql" download>Baixar script completo (.sql)</a></div>
+</section>
+<nav class="sql-index" aria-label="Etapas do código">
+<a href="#etapa-1">01 Preparação</a><a href="#etapa-2">02 Status</a><a href="#etapa-3">03 Estornos</a><a href="#etapa-4">04 Consolidação</a><a href="#etapa-5">05 Indicadores</a><a href="#resultado">Resultado esperado</a>
+</nav>
+<p class="muted sql-instruction">Os trechos abaixo fazem parte de uma única consulta. Para reproduzir a análise, baixe o script completo e execute-o em uma janela do SQL Server Management Studio (SSMS).</p>
+<div id="aviso-copia" class="sr-only" role="status"></div>
+<section class="panel sql-panel" id="etapa-1" aria-labelledby="titulo-1">
+<div class="sql-panel-head"><div><p class="eyebrow">ETAPA 01</p><h2 id="titulo-1">Preparação da base</h2></div>
+<button class="download copy-sql" type="button" data-code="codigo-1" aria-label="Copiar código de Preparação da base">Copiar código</button></div>
+<p class="muted">Crie as tabelas temporárias e insira os exemplos de canais, transações, eventos e estornos. As datas de início e corte definem o período da análise.</p>
+<pre class="sql-code" tabindex="0" aria-label="Código T-SQL da etapa 1"><code id="codigo-1"><span class="sql-comment">-- EXPLORANDO DADOS | Marcos Feitosa</span>
+<span class="sql-comment">-- Execute o script inteiro no SQL Server Management Studio.</span>
+<span class="sql-comment">-- Base ficticia. Somente tabelas temporarias sao utilizadas.</span>
+<span class="sql-keyword">SET</span> <span class="sql-keyword">NOCOUNT</span> <span class="sql-keyword">ON</span>;
+
+<span class="sql-keyword">IF</span> <span class="sql-keyword">OBJECT_ID</span>(<span class="sql-literal">&#x27;tempdb..#EDCanais&#x27;</span>) <span class="sql-keyword">IS</span> <span class="sql-keyword">NOT</span> <span class="sql-keyword">NULL</span> <span class="sql-keyword">DROP</span> <span class="sql-keyword">TABLE</span> #EDCanais;
+<span class="sql-keyword">IF</span> <span class="sql-keyword">OBJECT_ID</span>(<span class="sql-literal">&#x27;tempdb..#EDTransacoes&#x27;</span>) <span class="sql-keyword">IS</span> <span class="sql-keyword">NOT</span> <span class="sql-keyword">NULL</span> <span class="sql-keyword">DROP</span> <span class="sql-keyword">TABLE</span> #EDTransacoes;
+<span class="sql-keyword">IF</span> <span class="sql-keyword">OBJECT_ID</span>(<span class="sql-literal">&#x27;tempdb..#EDEventos&#x27;</span>) <span class="sql-keyword">IS</span> <span class="sql-keyword">NOT</span> <span class="sql-keyword">NULL</span> <span class="sql-keyword">DROP</span> <span class="sql-keyword">TABLE</span> #EDEventos;
+<span class="sql-keyword">IF</span> <span class="sql-keyword">OBJECT_ID</span>(<span class="sql-literal">&#x27;tempdb..#EDEstornos&#x27;</span>) <span class="sql-keyword">IS</span> <span class="sql-keyword">NOT</span> <span class="sql-keyword">NULL</span> <span class="sql-keyword">DROP</span> <span class="sql-keyword">TABLE</span> #EDEstornos;
+
+<span class="sql-keyword">CREATE</span> <span class="sql-keyword">TABLE</span> #EDCanais (
+    CanalID int <span class="sql-keyword">PRIMARY</span> <span class="sql-keyword">KEY</span>,
+    Canal nvarchar(20) <span class="sql-keyword">NOT</span> <span class="sql-keyword">NULL</span>
+);
+<span class="sql-keyword">CREATE</span> <span class="sql-keyword">TABLE</span> #EDTransacoes (
+    TransacaoID int <span class="sql-keyword">PRIMARY</span> <span class="sql-keyword">KEY</span>,
+    CanalID int <span class="sql-keyword">NOT</span> <span class="sql-keyword">NULL</span>,
+    Criacao date <span class="sql-keyword">NOT</span> <span class="sql-keyword">NULL</span>,
+    Valor decimal(12,2) <span class="sql-keyword">NOT</span> <span class="sql-keyword">NULL</span>
+);
+<span class="sql-keyword">CREATE</span> <span class="sql-keyword">TABLE</span> #EDEventos (
+    EventoID int <span class="sql-keyword">PRIMARY</span> <span class="sql-keyword">KEY</span>,
+    TransacaoID int <span class="sql-keyword">NOT</span> <span class="sql-keyword">NULL</span>,
+    Ocorrencia datetime2(0) <span class="sql-keyword">NOT</span> <span class="sql-keyword">NULL</span>,
+    StatusEvento varchar(12) <span class="sql-keyword">NOT</span> <span class="sql-keyword">NULL</span>
+);
+<span class="sql-keyword">CREATE</span> <span class="sql-keyword">TABLE</span> #EDEstornos (
+    EstornoID int <span class="sql-keyword">PRIMARY</span> <span class="sql-keyword">KEY</span>,
+    TransacaoID int <span class="sql-keyword">NOT</span> <span class="sql-keyword">NULL</span>,
+    Confirmacao date <span class="sql-keyword">NULL</span>,
+    Valor decimal(12,2) <span class="sql-keyword">NOT</span> <span class="sql-keyword">NULL</span>
+);
+
+<span class="sql-keyword">INSERT</span> <span class="sql-keyword">INTO</span> #EDCanais <span class="sql-keyword">VALUES</span> (1,<span class="sql-literal">N&#x27;Site&#x27;</span>),(2,<span class="sql-literal">N&#x27;App&#x27;</span>),(3,<span class="sql-literal">N&#x27;Balcão&#x27;</span>);
+<span class="sql-keyword">INSERT</span> <span class="sql-keyword">INTO</span> #EDTransacoes <span class="sql-keyword">VALUES</span>
+    (101,1,<span class="sql-literal">&#x27;20260305&#x27;</span>,200),(102,1,<span class="sql-literal">&#x27;20260310&#x27;</span>,100),(103,1,<span class="sql-literal">&#x27;20260331&#x27;</span>,300),
+    (201,2,<span class="sql-literal">&#x27;20260308&#x27;</span>,150),(202,2,<span class="sql-literal">&#x27;20260312&#x27;</span>,50),(203,2,<span class="sql-literal">&#x27;20260315&#x27;</span>,100),
+    (204,2,<span class="sql-literal">&#x27;20260331&#x27;</span>,80);
+<span class="sql-keyword">INSERT</span> <span class="sql-keyword">INTO</span> #EDEventos <span class="sql-keyword">VALUES</span>
+    (1,101,<span class="sql-literal">&#x27;2026-03-05T08:01:00&#x27;</span>,<span class="sql-literal">&#x27;Pendente&#x27;</span>),
+    (2,101,<span class="sql-literal">&#x27;2026-03-06T10:00:00&#x27;</span>,<span class="sql-literal">&#x27;Aprovada&#x27;</span>),
+    (3,101,<span class="sql-literal">&#x27;2026-03-07T10:00:00&#x27;</span>,<span class="sql-literal">&#x27;Aprovada&#x27;</span>),
+    (4,102,<span class="sql-literal">&#x27;2026-03-10T08:01:00&#x27;</span>,<span class="sql-literal">&#x27;Pendente&#x27;</span>),
+    (5,102,<span class="sql-literal">&#x27;2026-03-10T08:01:00&#x27;</span>,<span class="sql-literal">&#x27;Recusada&#x27;</span>),
+    (6,103,<span class="sql-literal">&#x27;2026-03-31T20:01:00&#x27;</span>,<span class="sql-literal">&#x27;Pendente&#x27;</span>),
+    (7,103,<span class="sql-literal">&#x27;2026-04-01T00:00:00&#x27;</span>,<span class="sql-literal">&#x27;Aprovada&#x27;</span>),
+    (8,201,<span class="sql-literal">&#x27;2026-03-08T08:01:00&#x27;</span>,<span class="sql-literal">&#x27;Aprovada&#x27;</span>),
+    (9,202,<span class="sql-literal">&#x27;2026-03-12T08:01:00&#x27;</span>,<span class="sql-literal">&#x27;Aprovada&#x27;</span>),
+    (10,203,<span class="sql-literal">&#x27;2026-03-15T08:01:00&#x27;</span>,<span class="sql-literal">&#x27;Recusada&#x27;</span>);
+<span class="sql-keyword">INSERT</span> <span class="sql-keyword">INTO</span> #EDEstornos <span class="sql-keyword">VALUES</span>
+    (1,101,<span class="sql-literal">&#x27;20260320&#x27;</span>,20),(2,101,<span class="sql-literal">&#x27;20260325&#x27;</span>,30),(3,101,<span class="sql-keyword">NULL</span>,10),
+    (4,101,<span class="sql-literal">&#x27;20260401&#x27;</span>,40),(5,201,<span class="sql-literal">&#x27;20260326&#x27;</span>,15);
+
+<span class="sql-keyword">DECLARE</span> @InicioED date = <span class="sql-literal">&#x27;20260301&#x27;</span>;
+<span class="sql-keyword">DECLARE</span> @CorteED date = <span class="sql-literal">&#x27;20260401&#x27;</span>;</code></pre>
+</section>
+<section class="panel sql-panel" id="etapa-2" aria-labelledby="titulo-2">
+<div class="sql-panel-head"><div><p class="eyebrow">ETAPA 02</p><h2 id="titulo-2">Último status no fechamento</h2></div>
+<button class="download copy-sql" type="button" data-code="codigo-2" aria-label="Copiar código de Último status no fechamento">Copiar código</button></div>
+<p class="muted">Filtre os eventos anteriores a abril e numere o histórico por transação. O evento mais recente fica com Ordem = 1. O EventoID resolve empates de horário.</p>
+<pre class="sql-code" tabindex="0" aria-label="Código T-SQL da etapa 2"><code id="codigo-2">;<span class="sql-keyword">WITH</span> EventosNoFechamento <span class="sql-keyword">AS</span> (
+    <span class="sql-comment">-- Filtre antes de ordenar para preservar o retrato de março.</span>
+    <span class="sql-keyword">SELECT</span> TransacaoID, StatusEvento,
+        <span class="sql-keyword">ROW_NUMBER</span>() <span class="sql-keyword">OVER</span> (
+            <span class="sql-keyword">PARTITION</span> <span class="sql-keyword">BY</span> TransacaoID <span class="sql-keyword">ORDER</span> <span class="sql-keyword">BY</span> Ocorrencia <span class="sql-keyword">DESC</span>, EventoID <span class="sql-keyword">DESC</span>
+        ) <span class="sql-keyword">AS</span> Ordem
+    <span class="sql-keyword">FROM</span> #EDEventos
+    <span class="sql-keyword">WHERE</span> Ocorrencia &lt; @CorteED
+),</code></pre>
+</section>
+<section class="panel sql-panel" id="etapa-3" aria-labelledby="titulo-3">
+<div class="sql-panel-head"><div><p class="eyebrow">ETAPA 03</p><h2 id="titulo-3">Estornos confirmados</h2></div>
+<button class="download copy-sql" type="button" data-code="codigo-3" aria-label="Copiar código de Estornos confirmados">Copiar código</button></div>
+<p class="muted">Some os estornos elegíveis por transação. Esta etapa reúne os estornos parciais em uma única linha antes do JOIN.</p>
+<pre class="sql-code" tabindex="0" aria-label="Código T-SQL da etapa 3"><code id="codigo-3">EstornosConfirmados <span class="sql-keyword">AS</span> (
+    <span class="sql-comment">-- Uma linha por transação antes do JOIN com o valor aprovado.</span>
+    <span class="sql-keyword">SELECT</span> TransacaoID, <span class="sql-keyword">SUM</span>(Valor) <span class="sql-keyword">AS</span> ValorEstornado
+    <span class="sql-keyword">FROM</span> #EDEstornos
+    <span class="sql-keyword">WHERE</span> Confirmacao &lt; @CorteED
+    <span class="sql-keyword">GROUP</span> <span class="sql-keyword">BY</span> TransacaoID
+),</code></pre>
+</section>
+<section class="panel sql-panel" id="etapa-4" aria-labelledby="titulo-4">
+<div class="sql-panel-head"><div><p class="eyebrow">ETAPA 04</p><h2 id="titulo-4">Consolidação por canal</h2></div>
+<button class="download copy-sql" type="button" data-code="codigo-4" aria-label="Copiar código de Consolidação por canal">Copiar código</button></div>
+<p class="muted">Use LEFT JOIN para manter os canais sem movimento. O GROUP BY consolida as tentativas, aprovações e valores de cada canal.</p>
+<pre class="sql-code" tabindex="0" aria-label="Código T-SQL da etapa 4"><code id="codigo-4">PorCanal <span class="sql-keyword">AS</span> (
+    <span class="sql-keyword">SELECT</span> c.CanalID, c.Canal,
+        <span class="sql-keyword">COUNT</span>(t.TransacaoID) <span class="sql-keyword">AS</span> Tentativas,
+        <span class="sql-keyword">SUM</span>(<span class="sql-keyword">CASE</span> <span class="sql-keyword">WHEN</span> e.StatusEvento = <span class="sql-literal">&#x27;Aprovada&#x27;</span> <span class="sql-keyword">THEN</span> 1 <span class="sql-keyword">ELSE</span> 0 <span class="sql-keyword">END</span>) <span class="sql-keyword">AS</span> Aprovadas,
+        <span class="sql-keyword">SUM</span>(<span class="sql-keyword">CASE</span> <span class="sql-keyword">WHEN</span> t.TransacaoID <span class="sql-keyword">IS</span> <span class="sql-keyword">NOT</span> <span class="sql-keyword">NULL</span> <span class="sql-keyword">AND</span> e.StatusEvento <span class="sql-keyword">IS</span> <span class="sql-keyword">NULL</span>
+                 <span class="sql-keyword">THEN</span> 1 <span class="sql-keyword">ELSE</span> 0 <span class="sql-keyword">END</span>) <span class="sql-keyword">AS</span> SemEvento,
+        <span class="sql-keyword">CAST</span>(<span class="sql-keyword">SUM</span>(<span class="sql-keyword">CASE</span> <span class="sql-keyword">WHEN</span> e.StatusEvento = <span class="sql-literal">&#x27;Aprovada&#x27;</span> <span class="sql-keyword">THEN</span> t.Valor <span class="sql-keyword">ELSE</span> 0 <span class="sql-keyword">END</span>)
+            <span class="sql-keyword">AS</span> decimal(18,2)) <span class="sql-keyword">AS</span> ValorAprovado,
+        <span class="sql-keyword">CAST</span>(<span class="sql-keyword">SUM</span>(<span class="sql-keyword">CASE</span> <span class="sql-keyword">WHEN</span> e.StatusEvento = <span class="sql-literal">&#x27;Aprovada&#x27;</span> <span class="sql-keyword">THEN</span> <span class="sql-keyword">COALESCE</span>(s.ValorEstornado,0)
+                      <span class="sql-keyword">ELSE</span> 0 <span class="sql-keyword">END</span>) <span class="sql-keyword">AS</span> decimal(18,2)) <span class="sql-keyword">AS</span> ValorEstornado
+    <span class="sql-keyword">FROM</span> #EDCanais <span class="sql-keyword">AS</span> c
+    <span class="sql-keyword">LEFT</span> <span class="sql-keyword">JOIN</span> #EDTransacoes <span class="sql-keyword">AS</span> t
+        <span class="sql-keyword">ON</span> t.CanalID = c.CanalID <span class="sql-keyword">AND</span> t.Criacao &gt;= @InicioED <span class="sql-keyword">AND</span> t.Criacao &lt; @CorteED
+    <span class="sql-keyword">LEFT</span> <span class="sql-keyword">JOIN</span> EventosNoFechamento <span class="sql-keyword">AS</span> e
+        <span class="sql-keyword">ON</span> e.TransacaoID = t.TransacaoID <span class="sql-keyword">AND</span> e.Ordem = 1
+    <span class="sql-keyword">LEFT</span> <span class="sql-keyword">JOIN</span> EstornosConfirmados <span class="sql-keyword">AS</span> s <span class="sql-keyword">ON</span> s.TransacaoID = t.TransacaoID
+    <span class="sql-keyword">GROUP</span> <span class="sql-keyword">BY</span> c.CanalID, c.Canal
+)</code></pre>
+</section>
+<section class="panel sql-panel" id="etapa-5" aria-labelledby="titulo-5">
+<div class="sql-panel-head"><div><p class="eyebrow">ETAPA 05</p><h2 id="titulo-5">Cálculo dos indicadores</h2></div>
+<button class="download copy-sql" type="button" data-code="codigo-5" aria-label="Copiar código de Cálculo dos indicadores">Copiar código</button></div>
+<p class="muted">Calcule o saldo após estornos e as duas taxas. NULLIF preserva a distinção entre uma taxa de zero e uma taxa que não pode ser calculada.</p>
+<pre class="sql-code" tabindex="0" aria-label="Código T-SQL da etapa 5"><code id="codigo-5"><span class="sql-keyword">SELECT</span> Canal, Tentativas, Aprovadas, SemEvento, ValorAprovado, ValorEstornado,
+    ValorAprovado - ValorEstornado <span class="sql-keyword">AS</span> ValorAposEstornos,
+    <span class="sql-keyword">CAST</span>(100.0 * Aprovadas / <span class="sql-keyword">NULLIF</span>(Tentativas,0) <span class="sql-keyword">AS</span> decimal(8,2)) <span class="sql-keyword">AS</span> TaxaAprovacaoPct,
+    <span class="sql-keyword">CAST</span>(100.0 * ValorEstornado / <span class="sql-keyword">NULLIF</span>(ValorAprovado,0) <span class="sql-keyword">AS</span> decimal(8,2)) <span class="sql-keyword">AS</span> TaxaEstornoPct
+<span class="sql-keyword">FROM</span> PorCanal
+<span class="sql-keyword">ORDER</span> <span class="sql-keyword">BY</span> Canal;</code></pre>
+</section>
+<section class="panel details sql-result" id="resultado" aria-labelledby="titulo-resultado">
+<p class="eyebrow">MARÇO DE 2026 / DADOS SIMULADOS</p>
+<h2 id="titulo-resultado">Resultado esperado</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Resultado esperado por canal">
+<table><thead><tr><th scope="col">Canal</th><th scope="col">Tentativas</th><th scope="col">Aprovadas</th><th scope="col">Sem evento</th><th scope="col">Aprovado</th><th scope="col">Estornado</th><th scope="col">Saldo</th><th scope="col">Aprovação</th><th scope="col">Estorno</th></tr></thead>
+<tbody>
+<tr><th scope="row">App</th><td>4</td><td>2</td><td>1</td><td>R$ 200,00</td><td>R$ 15,00</td><td>R$ 185,00</td><td>50,00%</td><td>7,50%</td></tr>
+<tr><th scope="row">Balcão</th><td>0</td><td>0</td><td>0</td><td>R$ 0,00</td><td>R$ 0,00</td><td>R$ 0,00</td><td>NULL</td><td>NULL</td></tr>
+<tr><th scope="row">Site</th><td>3</td><td>1</td><td>0</td><td>R$ 200,00</td><td>R$ 50,00</td><td>R$ 150,00</td><td>33,33%</td><td>25,00%</td></tr>
+</tbody></table></div>
+<p class="muted">App e Site aprovaram R$ 200 cada. Depois dos estornos, o saldo do App ficou R$ 35 acima do Site.</p>
+<a class="download" href="index.html#painel">Abrir o dashboard interativo →</a>
+</section>
+</main>
+<footer><div class="wrap footer"><span>EXPLORANDO DADOS</span><span>Projeto de Marcos Feitosa · Business Intelligence</span></div></footer>
+</body>
+</html>

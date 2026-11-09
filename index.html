@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Projeto de Marcos Feitosa sobre aprovação e estornos de pagamentos. Dashboard de BI com dados simulados.">
+<title>Explorando Dados | Marcos Feitosa</title>
+<link rel="stylesheet" href="style.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="top"><div class="wrap nav">
+<a class="brand" href="#inicio" aria-label="Explorando Dados, início"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span> Explorando<span>Dados</span></a>
+<nav aria-label="Navegação"><a href="sql.html">Códigos SQL</a><a href="#painel">Dashboard</a><a href="#metodo">Metodologia</a></nav>
+</div></header>
+<main class="wrap" id="inicio">
+<section class="hero" aria-labelledby="titulo">
+<p class="eyebrow"><span></span> PROJETO DE PORTFÓLIO / BUSINESS INTELLIGENCE</p>
+<h1 id="titulo">EXPLORANDO<br><strong>DADOS<span>.</span></strong></h1>
+<p class="hero-copy">Dos eventos de pagamento aos indicadores de negócio. Explore aprovações e estornos por canal e descubra quanto restou após as devoluções.</p>
+<div class="tags"><span>SQL Server</span><span>T-SQL</span><span>Data Analytics</span></div>
+<div class="sql-actions"><a class="primary-action" href="sql.html">Ver apresentação dos códigos SQL →</a></div>
+<div class="hero-art" aria-hidden="true">
+<svg viewBox="0 0 460 230" fill="none">
+<defs><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#40e6c1" stop-opacity=".24"/><stop offset="1" stop-color="#40e6c1" stop-opacity="0"/></linearGradient></defs>
+<path d="M0 30H460M0 80H460M0 130H460M0 180H460M45 0V230M105 0V230M165 0V230M225 0V230M285 0V230M345 0V230M405 0V230" stroke="#26354d"/>
+<path d="M0 190L65 157L125 171L190 113L246 128L311 68L367 88L430 29V230H0Z" fill="url(#fade)"/>
+<path d="M0 190L65 157L125 171L190 113L246 128L311 68L367 88L430 29" stroke="#5aefd0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="311" cy="68" r="5" fill="#5aefd0"/><circle cx="430" cy="29" r="5" fill="#5aefd0"/>
+<path d="M0 211L65 197L125 201L190 174L246 183L311 145L367 155L430 105" stroke="#a89cf9" stroke-width="2" stroke-dasharray="6 6"/>
+</svg></div>
+</section>
+<section id="painel" aria-labelledby="painel-titulo">
+<div class="section-head"><div><p class="eyebrow">01 / VISÃO GERAL</p><h2 id="painel-titulo">Desempenho dos pagamentos</h2></div><span class="period">MARÇO DE 2026 <b>·</b> DADOS SIMULADOS</span></div>
+<div class="toolbar"><div class="filters" aria-label="Filtrar por canal" role="group">
+<button type="button" data-filter="todos" aria-pressed="true">Todos</button><button type="button" data-filter="app" aria-pressed="false">App</button><button type="button" data-filter="site" aria-pressed="false">Site</button><button type="button" data-filter="balcao" aria-pressed="false">Balcão</button>
+</div><button class="download" type="button" id="exportar">↓ Baixar CSV</button></div>
+<div id="indicadores" class="metrics" aria-live="polite"></div>
+<div class="grid">
+<article class="panel"><p class="eyebrow">COMPOSIÇÃO DO VALOR APROVADO</p><h3>Valores por canal</h3><p class="muted">O valor aprovado é dividido entre estornos confirmados e o saldo restante.</p><div id="barras" class="bars"></div><div class="legend"><span><i></i> Após estornos</span><span><i></i> Estornado</span></div></article>
+<aside class="panel insight"><p class="eyebrow">LEITURA DOS DADOS</p><h3 id="insight-titulo"></h3><p id="insight-texto"></p><span class="insight-note">Amostra fictícia e ilustrativa</span></aside>
+</div>
+<article class="panel details"><h3>Detalhamento por canal</h3><div class="table-wrap" tabindex="0" role="region" aria-label="Tabela de indicadores por canal"><table><thead><tr><th scope="col">Canal</th><th scope="col">Tentativas</th><th scope="col">Aprovadas</th><th scope="col">Sem evento</th><th scope="col">Valor aprovado</th><th scope="col">Valor estornado</th><th scope="col">Após estornos</th><th scope="col">Taxa de estorno</th></tr></thead><tbody id="tabela"></tbody></table></div><p class="muted legend-note">— indica taxa indisponível quando o denominador é zero.</p></article>
+</section>
+<section id="metodo" aria-labelledby="metodo-titulo" class="method">
+<div class="section-head"><div><p class="eyebrow">02 / METODOLOGIA</p><h2 id="metodo-titulo">Como os indicadores foram calculados</h2></div><a class="download" href="sql.html">Ver códigos T-SQL →</a></div>
+<div class="steps">
+<article class="panel"><span>01</span><h3>Fixar o fechamento</h3><p>Considerar transações iniciadas em março e usar apenas eventos anteriores a 1º de abril. No SQL, <code>ROW_NUMBER()</code> seleciona o último status por transação.</p></article>
+<article class="panel"><span>02</span><h3>Consolidar os estornos</h3><p>Somar estornos confirmados por transação com <code>GROUP BY</code> antes do <code>LEFT JOIN</code>. Assim, vários estornos não multiplicam o valor aprovado.</p></article>
+<article class="panel"><span>03</span><h3>Calcular os indicadores</h3><p>Dividir aprovações por tentativas e valor estornado por valor aprovado. Subtrair os estornos do valor aprovado para obter o saldo.</p></article>
+</div>
+</section>
+</main>
+<footer><div class="wrap footer"><span>EXPLORANDO DADOS</span><span>Projeto de Marcos Feitosa · Business Intelligence</span></div></footer>
+<noscript>Ative o JavaScript para explorar o dashboard.</noscript>
+</body>
+</html>
